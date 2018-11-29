@@ -1,0 +1,19 @@
+<ul id="lists">
+  <% sort_lists_by_completion.each do |list| %>
+  <% if list_complete?(list) %>
+    <li class="complete">
+  <% else %>
+    <li>
+  <% end %>
+    <% idx = @lists.find_index(list) %>
+      <a href="/lists/<%= idx %>">
+        <h2><%= list[:name] %></h2>
+        <p><%= completed_todos(list) %> / <%= todos_count(list) %></p>
+      </a>
+    </li>
+  <% end %>
+</ul>
+
+<% content_for :header_links do %>
+  <a class="add" href="/lists/new">New List</a>
+<% end %>
