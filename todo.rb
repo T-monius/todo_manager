@@ -8,6 +8,10 @@ configure do
   set :session_secret, 'secret'
 end
 
+configure do
+  set :erb, :escape_html => true
+end
+
 before do
   session[:lists] ||= []
 end
@@ -42,6 +46,14 @@ helpers do
   end
 end
 
+def load_list(idx)
+  list = session[:lists][idx] if idx && session[:lists][idx]
+  return list if list
+
+  session[:error] = 'The specified list was not found.'
+  redirect '/lists'
+end
+
 get '/' do
   redirect '/lists'
 end
@@ -60,8 +72,14 @@ end
 # View a single list
 get '/lists/:index_number' do
   @list_index = params[:index_number].to_i
-  @list = session[:lists][@list_index]
-  erb :single_list, layout: :layout
+  @list = session[:lists].fetch(@list_index, 'no such index')
+
+  if @list == 'no such index'
+    session[:error] = 'The specified list was not found.'
+    redirect '/'
+  else
+    erb :single_list, layout: :layout
+  end
 end
 
 # Return an errore message if the name is invalid. Return nil
@@ -100,7 +118,7 @@ end
 # Add a new todo to a list
 post '/lists/:index_number/todos' do
   @idx = params[:index_number].to_i
-  @list = session[:lists][@idx]
+  @list = load_list(@idx)
   text = params[:todo].strip
 
   error = error_for_todo(text)
@@ -117,7 +135,7 @@ end
 # Render the edit list form
 get '/list/:index_number/edit' do
   @list_index = params[:index_number].to_i
-  @list = session[:lists][@list_index]
+  @list = load_list(@list_index)
   erb :edit_list, layout: :layout
 end
 
@@ -149,7 +167,7 @@ end
 post '/lists/:index_number/todos/:todo_index/delete' do
   list_idx = params[:index_number].to_i
   todo = params[:todo_index].to_i
-  list = session[:lists][list_idx]
+  list = load_list(list_idx)
 
   list[:todos].delete_at(todo)
   session[:success] = 'The todo has been deleted.'
@@ -159,7 +177,7 @@ end
 # Render a todo as checked/unchecked
 post '/lists/:index_number/todos/:id' do
   @list_id = params[:index_number].to_i
-  @list = session[:lists][@list_id]
+  @list = load_list(@list_id)
 
   todo_id = params[:id].to_i
   is_completed = params[:completed] == "true"
@@ -171,7 +189,7 @@ end
 # Check all todos as done
 post '/lists/:index_number/complete_todos' do
   list_idx = params[:index_number].to_i
-  @list = session[:lists][list_idx]
+  @list = load_list(list_idx)
 
   @list[:todos].each { |todo| todo[:completed] = true }
   session[:success] = 'The todos have been marked complete.'
