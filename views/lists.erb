@@ -1,12 +1,7 @@
 <ul id="lists">
-  <% sort_lists_by_completion.each_with_index do |list, idx| %>
-  <% if list_complete?(list) %>
-    <li class="complete">
-  <% else %>
-    <li>
-  <% end %>
-    <% idx = @lists.find_index(list) %>
-      <a href="/lists/<%= idx %>">
+  <% sort_lists_by_completion.each do |list| %>
+    <li class="<%= class_for(list) %>">
+      <a href="/lists/<%= list[:id] %>">
         <h2><%= list[:name] %></h2>
         <p><%= completed_todos(list) %> / <%= todos_count(list) %></p>
       </a>
